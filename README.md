@@ -1,6 +1,5 @@
 # Real Estate Backend
 
-![CI](https://github.com/<YOUR_GITHUB_USER>/<YOUR_REPO>/actions/workflows/ci.yml/badge.svg)
 ![Go](https://img.shields.io/badge/Go-1.23%2B-blue)
 
 Бэкенд для платформы недвижимости: управление объектами, коллекциями, страницами,
