@@ -1,0 +1,51 @@
+services:
+  app:
+    build: .
+    restart: always
+    env_file:
+      - ./config/app.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - minio
+
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-real_estate}
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-real-estate2025}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db-setup/migration.sql:/docker-entrypoint-initdb.d/001_migration.sql:ro
+
+  redis:
+    image: redis:7
+    restart: always
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-real-estate2025}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-real-estate2025}"]
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-real-estate}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-real-estate2025@}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  postgres_data:
+  minio_data:

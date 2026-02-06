@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Новое сообщение с сайта</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .container { padding: 20px; background-color: #f9f9f9; border-radius: 8px; }
+    .field { margin-bottom: 10px; }
+    .field strong { display: inline-block; width: 100px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>Новое сообщение с сайта</h2>
+  <div class="field">
+    <strong>Имя:</strong> {{.Name}}
+  </div>
+  <div class="field">
+    <strong>Телефон:</strong> {{.Phone}}
+  </div>
+  <div class="field">
+    <strong>Сообщение:</strong> <p>{{.Message}}</p>
+  </div>
+</div>
+</body>
+</html>
