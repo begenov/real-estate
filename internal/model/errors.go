@@ -36,7 +36,7 @@ var (
 	ErrRoomsMustBePositive        = errors.New("number of rooms must be a positive number")
 	ErrInvalidRegionID            = errors.New("region_id must be a positive number")
 	ErrInvalidStatus              = errors.New("invalid real estate status")
-	ErrIdMustBeGreaterThanZero    = errors.New("id cannot be greater than zero")
+	ErrIdMustBeGreaterThanZero    = errors.New("id must be greater than zero")
 	ErrTranslationsRequired       = errors.New("translations required")
 	ErrRealEstateStatus           = errors.New("invalid real estate status")
 	ErrRealEstateStatusNotCreated = errors.New("cannot update real estate: status is not created")

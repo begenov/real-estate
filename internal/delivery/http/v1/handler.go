@@ -1,11 +1,14 @@
 package v1
 
 import (
+	"net/http"
+
 	"github.com/begenov/real-estate/internal/async"
+	"github.com/begenov/real-estate/internal/config"
 	"github.com/begenov/real-estate/internal/repository/redis"
 	"github.com/begenov/real-estate/internal/service"
 	"github.com/begenov/real-estate/pkg/auth"
-
+	"github.com/begenov/real-estate/pkg/limiter"
 	"github.com/gin-gonic/gin"
 )
 
@@ -43,6 +46,26 @@ func NewHandler(realEstateService service.IRealEstateService,
 		blockService:      blockService,
 		cache:             cache,
 	}
+}
+
+func (h *Handler) InitRouter(cfg *config.Config) *gin.Engine {
+	router := gin.New()
+	router.Use(
+		gin.Recovery(),
+		gin.Logger(),
+		limiter.Limit(cfg.Limiter.RPS, cfg.Limiter.Burst, cfg.Limiter.TTL),
+		corsMiddleware(cfg.HTTP.CORSAllowedOrigins),
+		errorHandlerMiddleware,
+	)
+
+	router.GET("/ping", func(c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	})
+
+	api := router.Group("/api")
+	h.Init(api)
+
+	return router
 }
 
 func (h *Handler) Init(api *gin.RouterGroup) {

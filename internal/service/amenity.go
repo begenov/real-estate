@@ -12,6 +12,7 @@ type IAmenityService interface {
 	Delete(ctx context.Context, amenityId int64) error
 	GetAll(ctx context.Context) ([]*model.Amenity, error)
 	GetByID(ctx context.Context, id int64) (*model.Amenity, error)
+	GetByIDs(ctx context.Context, ids []int64) ([]*model.Amenity, error)
 }
 
 type AmenityService struct {
@@ -40,4 +41,8 @@ func (s *AmenityService) GetAll(ctx context.Context) ([]*model.Amenity, error) {
 
 func (s *AmenityService) GetByID(ctx context.Context, id int64) (*model.Amenity, error) {
 	return s.amenityRepo.GetByID(ctx, id)
+}
+
+func (s *AmenityService) GetByIDs(ctx context.Context, ids []int64) ([]*model.Amenity, error) {
+	return s.amenityRepo.GetByIDs(ctx, ids)
 }

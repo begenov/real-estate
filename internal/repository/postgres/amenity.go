@@ -3,7 +3,9 @@ package postgres
 import (
 	"context"
 	"database/sql"
+
 	"github.com/begenov/real-estate/internal/model"
+	"github.com/lib/pq"
 )
 
 type IAmenityRepo interface {
@@ -12,6 +14,7 @@ type IAmenityRepo interface {
 	Delete(ctx context.Context, amenityId int64) error
 	GetAll(ctx context.Context) ([]*model.Amenity, error)
 	GetByID(ctx context.Context, id int64) (*model.Amenity, error)
+	GetByIDs(ctx context.Context, ids []int64) ([]*model.Amenity, error)
 }
 
 type AmenityRepo struct {
@@ -97,4 +100,33 @@ func (r *AmenityRepo) GetByID(ctx context.Context, id int64) (*model.Amenity, er
 		return nil, err
 	}
 	return &a, nil
+}
+
+func (r *AmenityRepo) GetByIDs(ctx context.Context, ids []int64) ([]*model.Amenity, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	query := `
+		SELECT id, name_ru, name_en, name_de, name_tr, icon, created_at
+		FROM amenities
+		WHERE id = ANY($1) AND is_deleted = FALSE
+		ORDER BY id
+	`
+	rows, err := r.db.QueryContext(ctx, query, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+
+	var amenities []*model.Amenity
+	for rows.Next() {
+		var a model.Amenity
+		if err := rows.Scan(&a.ID, &a.NameRU, &a.NameEN, &a.NameDE, &a.NameTR, &a.Icon, &a.CreatedAt); err != nil {
+			return nil, err
+		}
+		amenities = append(amenities, &a)
+	}
+	return amenities, rows.Err()
 }

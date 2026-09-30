@@ -668,6 +668,11 @@ func (r *RealEstateRepo) GetTotalRealEstates(ctx context.Context, filter model.R
 	}
 
 	if len(filter.Status) > 0 {
+		queryBuilder.WriteString(` AND reh.id = (
+			SELECT MAX(reh2.id)
+			FROM public.real_estate_history reh2
+			WHERE reh2.real_estate_id = re.id
+		)`)
 		queryBuilder.WriteString(fmt.Sprintf(" AND reh.status_id IN (%s)", helper.GeneratePlaceholders(len(filter.Status), len(params)+1)))
 		for _, status := range filter.Status {
 			params = append(params, status)
@@ -675,7 +680,7 @@ func (r *RealEstateRepo) GetTotalRealEstates(ctx context.Context, filter model.R
 	}
 
 	if filter.DistrictID != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND reh.district_id = $%d", len(params)+1))
+		queryBuilder.WriteString(fmt.Sprintf(" AND re.district_id = $%d", len(params)+1))
 		params = append(params, *filter.DistrictID)
 	}
 

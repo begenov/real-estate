@@ -157,16 +157,13 @@ func (s *RealEstateService) GetRealEstate(ctx context.Context, estateId int64, u
 
 	estate.Translations = translations
 
-	amenities, err := s.realEstateRepo.GetAmenitiesByRealEstateID(ctx, estate.ID)
-	if err == nil {
-		for i := range amenities {
-			amenity, err := s.amenityService.GetByID(ctx, amenities[i])
-			if err != nil {
-				return nil, err
-			}
-
-			estate.Amenities = append(estate.Amenities, amenity)
+	amenityIDs, err := s.realEstateRepo.GetAmenitiesByRealEstateID(ctx, estate.ID)
+	if err == nil && len(amenityIDs) > 0 {
+		amenities, err := s.amenityService.GetByIDs(ctx, amenityIDs)
+		if err != nil {
+			return nil, err
 		}
+		estate.Amenities = amenities
 	}
 
 	region, err := s.locationService.GetRegionByID(ctx, estate.Region.ID)

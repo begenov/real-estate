@@ -11,7 +11,7 @@ import (
 
 	"github.com/begenov/real-estate/internal/async"
 	"github.com/begenov/real-estate/internal/config"
-	httpV1 "github.com/begenov/real-estate/internal/delivery/http"
+	v1 "github.com/begenov/real-estate/internal/delivery/http/v1"
 	"github.com/begenov/real-estate/internal/logger"
 	"github.com/begenov/real-estate/internal/repository/minio"
 	"github.com/begenov/real-estate/internal/repository/postgres"
@@ -134,9 +134,9 @@ func Run(cfg *config.Config) error {
 	blockService := service.NewBlockService(blockRepo, translateService)
 
 	// handler
-	handler := httpV1.NewHandler(realEstateService, userService, collectionService, minioService, token, amenityService, locationService, emailService, pageService, blockService, redisRepo)
+	handler := v1.NewHandler(realEstateService, userService, collectionService, minioService, token, amenityService, locationService, emailService, pageService, blockService, redisRepo)
 
-	srv := server.NewServer(cfg, handler.Init(cfg))
+	srv := server.NewServer(cfg, handler.InitRouter(cfg))
 
 	appCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
