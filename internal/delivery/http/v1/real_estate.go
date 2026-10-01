@@ -169,7 +169,7 @@ func (h *Handler) deleteRealEstate(c *gin.Context) {
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid collection ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid real estate ID"})
 		return
 	}
 
@@ -185,7 +185,7 @@ func (h *Handler) deleteRealEstate(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusOK)
+	c.Status(http.StatusNoContent)
 }
 
 func parseRealEstateFilters(c *gin.Context) (model.RealEstateFilter, error) {
@@ -200,7 +200,7 @@ func parseRealEstateFilters(c *gin.Context) (model.RealEstateFilter, error) {
 	if priceMinStr := c.Query("price_min"); priceMinStr != "" {
 		priceMin, err := strconv.ParseFloat(priceMinStr, 64)
 		if err != nil {
-			return filter, err
+			return filter, model.ErrBadRequestQuery
 		}
 		filter.PriceMin = &priceMin
 	}
@@ -308,7 +308,7 @@ func (h *Handler) updateRealEstateStatus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil || id <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid collection id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid real estate id"})
 		return
 	}
 

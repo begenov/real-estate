@@ -99,7 +99,6 @@ func Run(cfg *config.Config) error {
 	blockRepo := postgres.NewBlockRepo(postgresDB)
 
 	//Service
-	// TODO: Получать путь к логотипу через config/env
 	translateService := service.NewTranslateService(translateClient)
 	exchangeRateService := service.NewExchangeRateService(exchangeRateRepo, cfg.Exchange.APIKey)
 	imageService := service.NewImageService(cfg.Watermark.Path)
