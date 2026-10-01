@@ -10,6 +10,7 @@ import (
 	"github.com/begenov/real-estate/pkg/auth"
 	"github.com/begenov/real-estate/pkg/limiter"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Handler struct {
@@ -53,6 +54,7 @@ func (h *Handler) InitRouter(cfg *config.Config) *gin.Engine {
 	router.Use(
 		gin.Recovery(),
 		gin.Logger(),
+		prometheusMiddleware(),
 		limiter.Limit(cfg.Limiter.RPS, cfg.Limiter.Burst, cfg.Limiter.TTL),
 		corsMiddleware(cfg.HTTP.CORSAllowedOrigins),
 		errorHandlerMiddleware,
@@ -61,6 +63,7 @@ func (h *Handler) InitRouter(cfg *config.Config) *gin.Engine {
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
 	})
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	api := router.Group("/api")
 	h.Init(api)
