@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/twinj/uuid"
+	"github.com/google/uuid"
 )
 
 type TokenManager interface {
@@ -50,13 +50,13 @@ func (m *Manager) ParseRefreshToken(refreshToken string) (*model.TokenDetails, e
 func (m *Manager) NewTokenDetails(userId int64) (*model.TokenDetails, error) {
 	tokenDetails := &model.TokenDetails{}
 
-	tokenDetails.AccessUuid = uuid.NewV4().String()
+	tokenDetails.AccessUuid = uuid.New().String()
 	tokenDetails.AtExpires = time.Now().Add(m.accessTokenTTL).Unix()
 
-	tokenDetails.RefreshUuid = uuid.NewV4().String()
+	tokenDetails.RefreshUuid = uuid.New().String()
 	tokenDetails.RtExpires = time.Now().Add(m.refreshTokenTTL).Unix()
 
-	tokenDetails.SessionUuid = uuid.NewV4().String()
+	tokenDetails.SessionUuid = uuid.New().String()
 
 	atClaims := jwt.MapClaims{
 		"access_uuid":  tokenDetails.AccessUuid,

@@ -121,6 +121,13 @@ func (s *UserService) CreateUser(ctx context.Context, reqUser *model.UserCreateI
 		return err
 	}
 
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
 	err = s.userRepo.CreateUser(ctx, tx, &user)
 	if err != nil {
 		logger.Error("CreateUser(): ", err)
@@ -135,7 +142,11 @@ func (s *UserService) CreateUser(ctx context.Context, reqUser *model.UserCreateI
 
 	reqUser.ID = user.ID
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	committed = true
+	return nil
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, reqUser *model.UserCreateInput) error {

@@ -68,19 +68,20 @@ func (h *Handler) parseAuthHeader(c *gin.Context) (*model.TokenDetails, error) {
 func (h *Handler) userIdentity(c *gin.Context) {
 	tokenDetails, err := h.parseAuthHeader(c)
 	if err != nil {
-		logger.Error("h.parseAuthHeader(): ", err)
-		newResponse(c, http.StatusUnauthorized, model.ErrTokenIsExpired.Error())
+		_ = c.Error(model.NewAPIError(http.StatusUnauthorized, model.ErrTokenIsExpired.Error(), err))
+		c.Abort()
 		return
 	}
 
 	if tokenDetails.AtExpires < time.Now().UTC().Unix() {
-		newResponse(c, http.StatusUnauthorized, model.ErrTokenIsExpired.Error())
+		_ = c.Error(model.NewAPIError(http.StatusUnauthorized, model.ErrTokenIsExpired.Error(), model.ErrTokenIsExpired))
+		c.Abort()
 		return
 	}
 
-	err = h.userService.VerifyAccessToken(c.Request.Context(), tokenDetails.UserId, tokenDetails.AccessUuid, tokenDetails.SessionUuid)
-	if err != nil {
-		newResponse(c, http.StatusUnauthorized, model.ErrTokenIsExpired.Error())
+	if err := h.userService.VerifyAccessToken(c.Request.Context(), tokenDetails.UserId, tokenDetails.AccessUuid, tokenDetails.SessionUuid); err != nil {
+		_ = c.Error(model.NewAPIError(http.StatusUnauthorized, model.ErrTokenIsExpired.Error(), err))
+		c.Abort()
 		return
 	}
 

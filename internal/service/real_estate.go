@@ -429,18 +429,18 @@ func (s *RealEstateService) UpdateRealEstate(ctx context.Context, updEstate *mod
 
 		for _, existingID := range existingAmenities {
 			if _, stillExists := newAmenityMap[existingID]; !stillExists {
-				err := s.realEstateRepo.RemoveAmenity(ctx, tx, updEstate.ID, existingID)
-				if err != nil {
-					logger.Error("s.realEstateRepo.DeleteAmenity(): ", err)
+				if err := s.realEstateRepo.RemoveAmenity(ctx, tx, updEstate.ID, existingID); err != nil {
+					logger.Error("s.realEstateRepo.RemoveAmenity(): ", err)
+					return err
 				}
 			}
 		}
 
 		for _, newID := range updEstate.AmenityIDs {
 			if _, alreadyExists := existingAmenityMap[newID]; !alreadyExists {
-				err := s.realEstateRepo.AddAmenity(ctx, tx, updEstate.ID, newID)
-				if err != nil {
+				if err := s.realEstateRepo.AddAmenity(ctx, tx, updEstate.ID, newID); err != nil {
 					logger.Error("s.realEstateRepo.AddAmenity(): ", err)
+					return err
 				}
 			}
 		}
@@ -475,16 +475,6 @@ func (s *RealEstateService) DeleteRealEstate(ctx context.Context, id, userId int
 		logger.Error("s.realEstateRepo.GetRealEstate(): ", err)
 		return err
 	}
-
-	//history, err := s.realEstateRepo.GetRealEstateLastHistory(ctx, estate.ID)
-	//if err != nil {
-	//	logger.Error("s.realEstateRepo.GetRealEstateLastHistory(): ", err)
-	//	return err
-	//}
-	//
-	//if history != nil && !(history.Status.ID == model.Status_Created || history.Status.ID == model.Status_Archived) {
-	//	return model.ErrInvalidCollectionStatus
-	//}
 
 	roles, err := s.userRepo.GetUserRole(ctx, userId)
 	if err != nil {
@@ -592,10 +582,6 @@ func (s *RealEstateService) UpdateStatus(ctx context.Context, estateId, userId i
 		logger.Errorf("s.realEstateRepo.GetRealEstateLastHistory() error: %v", err)
 		return err
 	}
-
-	//if statusId < estate.LatestHistory.Status.ID {
-	//	return model.ErrRealEstateStatus
-	//}
 
 	if statusId == estate.LatestHistory.Status.ID {
 		return nil

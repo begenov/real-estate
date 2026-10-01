@@ -84,7 +84,7 @@ func Run(cfg *config.Config) error {
 
 	//Repo
 	userRepo := postgres.NewUserRepo(postgresDB)
-	realEstateRepo := postgres.NewRealEstateRepo(postgresDB, clientMinio)
+	realEstateRepo := postgres.NewRealEstateRepo(postgresDB)
 	collectionRepo := postgres.NewCollectionRepo(postgresDB)
 	txRepo := postgres.NewTxRepo(postgresDB)
 	fileRepo := postgres.NewFileRepo(postgresDB)

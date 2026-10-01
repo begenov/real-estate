@@ -13,7 +13,6 @@ import (
 	"github.com/begenov/real-estate/pkg/helper"
 
 	"github.com/lib/pq"
-	"github.com/minio/minio-go/v7"
 )
 
 type IRealEstateRepo interface {
@@ -45,15 +44,11 @@ type IRealEstateRepo interface {
 	GetAmenitiesByRealEstateID(ctx context.Context, realEstateID int64) ([]int64, error)
 }
 type RealEstateRepo struct {
-	db          *sql.DB
-	minioClient *minio.Client
+	db *sql.DB
 }
 
-func NewRealEstateRepo(db *sql.DB, minioClient *minio.Client) IRealEstateRepo {
-	return &RealEstateRepo{
-		db:          db,
-		minioClient: minioClient,
-	}
+func NewRealEstateRepo(db *sql.DB) IRealEstateRepo {
+	return &RealEstateRepo{db: db}
 }
 
 func (r *RealEstateRepo) GetRealEstate(ctx context.Context, id int64) (*model.RealEstate, error) {
@@ -104,6 +99,63 @@ func (r *RealEstateRepo) GetRealEstate(ctx context.Context, id int64) (*model.Re
 	return &realEstate, nil
 }
 
+func appendRealEstateFilters(sb *strings.Builder, params []interface{}, filter model.RealEstateFilter) []interface{} {
+	if filter.PriceMin != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.price >= $%d", len(params)+1))
+		params = append(params, *filter.PriceMin)
+	}
+	if filter.PriceMax != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.price <= $%d", len(params)+1))
+		params = append(params, *filter.PriceMax)
+	}
+	if filter.RegionID != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.region_id = $%d", len(params)+1))
+		params = append(params, *filter.RegionID)
+	}
+	if len(filter.Rooms) > 0 {
+		sb.WriteString(fmt.Sprintf(" AND re.rooms IN (%s)", helper.GeneratePlaceholders(len(filter.Rooms), len(params)+1)))
+		for _, r := range filter.Rooms {
+			params = append(params, r)
+		}
+	}
+	if len(filter.Purpose) > 0 {
+		sb.WriteString(fmt.Sprintf(" AND re.purpose_id IN (%s)", helper.GeneratePlaceholders(len(filter.Purpose), len(params)+1)))
+		for _, p := range filter.Purpose {
+			params = append(params, p)
+		}
+	}
+	if len(filter.Status) > 0 {
+		sb.WriteString(` AND reh.id = (
+			SELECT MAX(reh2.id)
+			FROM public.real_estate_history reh2
+			WHERE reh2.real_estate_id = re.id
+		)`)
+		sb.WriteString(fmt.Sprintf(" AND reh.status_id IN (%s)", helper.GeneratePlaceholders(len(filter.Status), len(params)+1)))
+		for _, s := range filter.Status {
+			params = append(params, s)
+		}
+	}
+	if filter.CollectionId != nil {
+		sb.WriteString(fmt.Sprintf(" AND ci.collection_id = $%d", len(params)+1))
+		params = append(params, *filter.CollectionId)
+	}
+	if filter.DistrictID != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.district_id = $%d", len(params)+1))
+		params = append(params, *filter.DistrictID)
+	}
+	if len(filter.Type) > 0 {
+		sb.WriteString(fmt.Sprintf(" AND re.type IN (%s)", helper.GeneratePlaceholders(len(filter.Type), len(params)+1)))
+		for _, t := range filter.Type {
+			params = append(params, t)
+		}
+	}
+	if filter.ID != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.id = $%d", len(params)+1))
+		params = append(params, *filter.ID)
+	}
+	return params
+}
+
 func (r *RealEstateRepo) GetRealEstates(ctx context.Context, filter model.RealEstateFilter) (model.RealEstates, int, error) {
 	var queryBuilder strings.Builder
 	var params []interface{}
@@ -142,72 +194,7 @@ func (r *RealEstateRepo) GetRealEstates(ctx context.Context, filter model.RealEs
 		WHERE re.is_deleted = false
 	`)
 
-	if filter.PriceMin != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.price >= $%d", len(params)+1))
-		params = append(params, *filter.PriceMin)
-	}
-
-	if filter.PriceMax != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.price <= $%d", len(params)+1))
-		params = append(params, *filter.PriceMax)
-	}
-
-	if filter.RegionID != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.region_id = $%d", len(params)+1))
-		params = append(params, *filter.RegionID)
-	}
-
-	if len(filter.Rooms) > 0 {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.rooms IN (%s)", helper.GeneratePlaceholders(len(filter.Rooms), len(params)+1)))
-		for i := range filter.Rooms {
-			params = append(params, filter.Rooms[i])
-		}
-	}
-
-	if filter.Purpose != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.purpose_id in (%s)", helper.GeneratePlaceholders(len(filter.Purpose), len(params)+1)))
-		for i := range filter.Purpose {
-			params = append(params, filter.Purpose[i])
-		}
-	}
-
-	if len(filter.Status) > 0 {
-
-		queryBuilder.WriteString(` AND
-		reh.id = (
-    	SELECT MAX(reh2.id)
-    	FROM public.real_estate_history reh2
-    	WHERE reh2.real_estate_id = re.id
-  		)
-`)
-
-		queryBuilder.WriteString(fmt.Sprintf(" AND reh.status_id IN (%s)", helper.GeneratePlaceholders(len(filter.Status), len(params)+1)))
-		for i := range filter.Status {
-			params = append(params, filter.Status[i])
-		}
-	}
-
-	if filter.CollectionId != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND ci.collection_id = $%d", len(params)+1))
-		params = append(params, *filter.CollectionId)
-	}
-
-	if filter.DistrictID != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.district_id = $%d", len(params)+1))
-		params = append(params, *filter.DistrictID)
-	}
-
-	if len(filter.Type) > 0 {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.type in (%s)", helper.GeneratePlaceholders(len(filter.Type), len(params)+1)))
-		for i := range filter.Type {
-			params = append(params, filter.Type[i])
-		}
-	}
-
-	if filter.ID != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.id = $%d", len(params)+1))
-		params = append(params, *filter.ID)
-	}
+	params = appendRealEstateFilters(&queryBuilder, params, filter)
 
 	var totalCount int
 	err := r.db.QueryRowContext(ctx, `SELECT COUNT(distinct re.id) `+queryBuilder.String(), params...).Scan(&totalCount)
@@ -610,7 +597,7 @@ func (r *RealEstateRepo) SetStatus(ctx context.Context, tx *sql.Tx, realEstateId
 
 	_, err := tx.ExecContext(ctx, query, realEstateId, status, time.Now(), userId)
 	if err != nil {
-		return fmt.Errorf("ошибка при установке статуса: %w", err)
+		return fmt.Errorf("failed to set status: %w", err)
 	}
 
 	return nil
@@ -634,55 +621,12 @@ func (r *RealEstateRepo) GetTotalRealEstates(ctx context.Context, filter model.R
 		FROM public.real_estate re
 		JOIN public."user" u ON u.id = re.manager_id
 		JOIN public.real_estate_history reh ON reh.real_estate_id = re.id
+		LEFT JOIN public.collection_item ci ON ci.real_estate_id = re.id
 		LEFT JOIN public.district d ON d.id = re.district_id
-		WHERE 1=1
+		WHERE re.is_deleted = false
 	`)
 
-	if filter.PriceMin != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.price >= $%d", len(params)+1))
-		params = append(params, *filter.PriceMin)
-	}
-
-	if filter.PriceMax != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.price <= $%d", len(params)+1))
-		params = append(params, *filter.PriceMax)
-	}
-
-	if filter.RegionID != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.region_id = $%d", len(params)+1))
-		params = append(params, *filter.RegionID)
-	}
-
-	if len(filter.Rooms) > 0 {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.rooms IN (%s)", helper.GeneratePlaceholders(len(filter.Rooms), len(params)+1)))
-		for _, room := range filter.Rooms {
-			params = append(params, room)
-		}
-	}
-
-	if filter.Purpose != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.purpose_id IN (%s)", helper.GeneratePlaceholders(len(filter.Purpose), len(params)+1)))
-		for _, purpose := range filter.Purpose {
-			params = append(params, purpose)
-		}
-	}
-
-	if len(filter.Status) > 0 {
-		queryBuilder.WriteString(` AND reh.id = (
-			SELECT MAX(reh2.id)
-			FROM public.real_estate_history reh2
-			WHERE reh2.real_estate_id = re.id
-		)`)
-		queryBuilder.WriteString(fmt.Sprintf(" AND reh.status_id IN (%s)", helper.GeneratePlaceholders(len(filter.Status), len(params)+1)))
-		for _, status := range filter.Status {
-			params = append(params, status)
-		}
-	}
-
-	if filter.DistrictID != nil {
-		queryBuilder.WriteString(fmt.Sprintf(" AND re.district_id = $%d", len(params)+1))
-		params = append(params, *filter.DistrictID)
-	}
+	params = appendRealEstateFilters(&queryBuilder, params, filter)
 
 	var totalCount int
 	err := r.db.QueryRowContext(ctx, queryBuilder.String(), params...).Scan(&totalCount)
