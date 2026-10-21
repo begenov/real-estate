@@ -69,7 +69,7 @@ func (h *Handler) getPublicCollection(c *gin.Context) {
 		return
 	}
 
-	collection, total, err := h.collectionService.GetCollectionUUID(c, key, page, rows)
+	collection, total, err := h.collectionService.GetCollectionUUID(c.Request.Context(), key, page, rows)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -200,9 +200,7 @@ func (h *Handler) createCollection(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, collection)
-
-	c.Status(http.StatusCreated)
+	c.JSON(http.StatusCreated, collection)
 }
 
 func (h *Handler) updateCollection(c *gin.Context) {

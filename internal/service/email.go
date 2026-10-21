@@ -11,8 +11,8 @@ import (
 )
 
 type IEmailService interface {
-	SendContactForm(name, phone, message string) error
-	SendTourForm(name, phone string, desiredDate time.Time) error
+	SendContactForm(ctx context.Context, name, phone, message string) error
+	SendTourForm(ctx context.Context, name, phone string, desiredDate time.Time) error
 }
 
 type EmailService struct {
@@ -32,12 +32,12 @@ func NewEmailService(sender smtp.Sender, cfg config.EmailConfig, receiverEmail s
 }
 
 // SendContactForm отправляет письмо с формы обратной связи
-func (s *EmailService) SendContactForm(name, phone, message string) error {
+func (s *EmailService) SendContactForm(ctx context.Context, name, phone, message string) error {
 	input := smtp.SendEmailInput{
 		Subject: s.cfg.Subjects.ContractFormEmail,
 	}
 
-	emails, err := s.blockRepo.GetEmails(context.Background())
+	emails, err := s.blockRepo.GetEmails(ctx)
 	if err != nil {
 		logger.Errorf("s.blockRepo.GetEmails() error: %v", err)
 		return err
@@ -68,12 +68,12 @@ func (s *EmailService) SendContactForm(name, phone, message string) error {
 	return s.sender.Send(input)
 }
 
-func (s *EmailService) SendTourForm(name, phone string, desiredDate time.Time) error {
+func (s *EmailService) SendTourForm(ctx context.Context, name, phone string, desiredDate time.Time) error {
 	input := smtp.SendEmailInput{
 		Subject: s.cfg.Subjects.TourFormEmail,
 	}
 
-	emails, err := s.blockRepo.GetEmails(context.Background())
+	emails, err := s.blockRepo.GetEmails(ctx)
 	if err != nil {
 		logger.Errorf("s.blockRepo.GetEmails() error: %v", err)
 		return err

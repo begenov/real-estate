@@ -124,13 +124,13 @@ func (r *LocationRepo) GetRegions(ctx context.Context, filter *model.RegionFilte
 			params = append(params, *filter.CountryId)
 		}
 		if filter.Name != nil && utf8.RuneCountInString(*filter.Name) > 0 {
-			queryBuilder.WriteString(fmt.Sprintf(` AND (name_ru ILIKE $%d OR name_en ILIKE $%d OR name_tr ILIKE $%d OR name_de ILIKE %d)`, len(params)+1, len(params)+1, len(params)+1, len(params)+1))
+			queryBuilder.WriteString(fmt.Sprintf(` AND (name_ru ILIKE $%d OR name_en ILIKE $%d OR name_tr ILIKE $%d OR name_de ILIKE $%d)`, len(params)+1, len(params)+1, len(params)+1, len(params)+1))
 			params = append(params, "%"+*filter.Name+"%")
 		}
 
 		queryBuilder.WriteString(fmt.Sprintf(` LIMIT $%d OFFSET $%d `, len(params)+1, len(params)+2))
 
-		params = append(params, filter.Rows, filter.Page*filter.Rows)
+		params = append(params, filter.Rows, (filter.Page-1)*filter.Rows)
 	}
 
 	rows, err := r.db.QueryContext(ctx, queryBuilder.String(), params...)
@@ -271,7 +271,7 @@ func (r *LocationRepo) GetDistricts(ctx context.Context, filter *model.DistrictF
 		args = append(args, filter.Rows)
 		query += ` LIMIT $` + fmt.Sprintf("%d", len(args))
 
-		args = append(args, filter.Page*filter.Rows)
+		args = append(args, (filter.Page-1)*filter.Rows)
 		query += ` OFFSET $` + fmt.Sprintf("%d", len(args))
 	}
 

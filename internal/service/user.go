@@ -152,9 +152,13 @@ func (s *UserService) CreateUser(ctx context.Context, reqUser *model.UserCreateI
 func (s *UserService) UpdateUser(ctx context.Context, reqUser *model.UserCreateInput) error {
 
 	user, err := s.userRepo.GetUser(ctx, &model.UserFilter{Id: &reqUser.ID})
-	if err != nil || user == nil {
+	if err != nil {
 		logger.Error("GetUser(): ", err)
 		return err
+	}
+
+	if user == nil {
+		return model.ErrNotFound
 	}
 
 	if reqUser.Password != nil && len(*reqUser.Password) > 0 {

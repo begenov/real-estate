@@ -26,7 +26,7 @@ func (h *Handler) sendContactForm(c *gin.Context) {
 		return
 	}
 
-	err := h.emailService.SendContactForm(input.Name, input.Phone, input.Message)
+	err := h.emailService.SendContactForm(c.Request.Context(), input.Name, input.Phone, input.Message)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось отправить письмо"})
 		return
@@ -47,7 +47,7 @@ func (h *Handler) sendTourForm(c *gin.Context) {
 		return
 	}
 
-	err := h.emailService.SendTourForm(input.Name, input.Phone, input.DesiredDate)
+	err := h.emailService.SendTourForm(c.Request.Context(), input.Name, input.Phone, input.DesiredDate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось отправить письмо"})
 		return

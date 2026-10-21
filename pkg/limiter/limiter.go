@@ -36,20 +36,15 @@ func newRateLimiter(rps, burst int, ttl time.Duration) *rateLimiter {
 }
 
 func (l *rateLimiter) getVisitor(ip string) *rate.Limiter {
-	l.RLock()
+	l.Lock()
 	v, exists := l.visitors[ip]
-	l.RUnlock()
-
 	if !exists {
-		limiter := rate.NewLimiter(l.limit, l.burst)
-		l.Lock()
-		l.visitors[ip] = &visitor{limiter, time.Now()}
-		l.Unlock()
-
-		return limiter
+		v = &visitor{rate.NewLimiter(l.limit, l.burst), time.Now()}
+		l.visitors[ip] = v
+	} else {
+		v.lastSeen = time.Now()
 	}
-
-	v.lastSeen = time.Now()
+	l.Unlock()
 	return v.limiter
 }
 
@@ -76,14 +71,7 @@ func (l *rateLimiter) cleanupVisitors(ctx context.Context) {
 func Limit(rps int, burst int, ttl time.Duration) gin.HandlerFunc {
 	l := newRateLimiter(rps, burst, ttl)
 
-	ctx, cancel := context.WithCancel(context.Background())
-
-	go l.cleanupVisitors(ctx)
-
-	go func() {
-		<-ctx.Done()
-		cancel()
-	}()
+	go l.cleanupVisitors(context.Background())
 
 	return func(c *gin.Context) {
 		ip, _, err := net.SplitHostPort(c.Request.RemoteAddr)

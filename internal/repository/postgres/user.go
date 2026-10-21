@@ -150,7 +150,7 @@ func (r *UserRepo) GetUser(ctx context.Context, filter *model.UserFilter) (*mode
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, err
+			return nil, model.ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}

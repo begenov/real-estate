@@ -93,17 +93,18 @@ func (s *CollectionService) CreateCollection(ctx context.Context, collection *mo
 	}
 
 	for i := range collection.Items {
-
-		estate, err := s.realEstateRepo.GetRealEstate(ctx, collection.Items[i])
-		if err != nil || estate == nil {
-			logger.Error("s.realEstateRepo.GetRealEstate() error: ", err)
-			return model.ErrRealEstateCollection
+		estate, itemErr := s.realEstateRepo.GetRealEstate(ctx, collection.Items[i])
+		if itemErr != nil || estate == nil {
+			logger.Error("s.realEstateRepo.GetRealEstate() error: ", itemErr)
+			err = model.ErrRealEstateCollection
+			return err
 		}
 
-		estate.LatestHistory, err = s.realEstateRepo.GetRealEstateLastHistory(ctx, estate.ID)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			logger.Error("s.realEstateRepo.GetRealEstateLastHistory(): ", err)
-			return model.ErrRealEstateHistory
+		estate.LatestHistory, itemErr = s.realEstateRepo.GetRealEstateLastHistory(ctx, estate.ID)
+		if itemErr != nil && !errors.Is(itemErr, sql.ErrNoRows) {
+			logger.Error("s.realEstateRepo.GetRealEstateLastHistory(): ", itemErr)
+			err = model.ErrRealEstateHistory
+			return err
 		}
 
 		//if estate.LatestHistory.Status.ID != model.Status_Available {
@@ -129,12 +130,13 @@ func (s *CollectionService) CreateCollection(ctx context.Context, collection *mo
 			continue
 		}
 
-		tTitle, err := s.translateService.Translate(ctx, collection.Name, code)
+		var tTitle, tDesc string
+		tTitle, err = s.translateService.Translate(ctx, collection.Name, code)
 		if err != nil {
 			return err
 		}
 
-		tDesc, err := s.translateService.Translate(ctx, collection.Description, code)
+		tDesc, err = s.translateService.Translate(ctx, collection.Description, code)
 		if err != nil {
 			return err
 		}
@@ -195,8 +197,9 @@ func (s *CollectionService) UpdateCollection(ctx context.Context, updCollection 
 
 	if len(updCollection.DeletedItems) > 0 {
 		for i := range updCollection.DeletedItems {
-			err := s.collectionRepo.DeleteCollectionItem(ctx, tx, updCollection.ID, updCollection.DeletedItems[i])
-			if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			itemErr := s.collectionRepo.DeleteCollectionItem(ctx, tx, updCollection.ID, updCollection.DeletedItems[i])
+			if itemErr != nil && !errors.Is(itemErr, sql.ErrNoRows) {
+				err = itemErr
 				logger.Errorf("s.collectionRepo.DeleteCollectionItem() error: %v", err)
 				return err
 			}
@@ -204,17 +207,18 @@ func (s *CollectionService) UpdateCollection(ctx context.Context, updCollection 
 	}
 
 	for i := range updCollection.Items {
-
-		estate, err := s.realEstateRepo.GetRealEstate(ctx, updCollection.Items[i])
-		if err != nil || estate == nil {
-			logger.Error("s.realEstateRepo.GetRealEstate() error: ", err)
-			return model.ErrRealEstateCollection
+		estate, itemErr := s.realEstateRepo.GetRealEstate(ctx, updCollection.Items[i])
+		if itemErr != nil || estate == nil {
+			logger.Error("s.realEstateRepo.GetRealEstate() error: ", itemErr)
+			err = model.ErrRealEstateCollection
+			return err
 		}
 
-		estate.LatestHistory, err = s.realEstateRepo.GetRealEstateLastHistory(ctx, estate.ID)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			logger.Error("s.realEstateRepo.GetRealEstateLastHistory(): ", err)
-			return model.ErrRealEstateHistory
+		estate.LatestHistory, itemErr = s.realEstateRepo.GetRealEstateLastHistory(ctx, estate.ID)
+		if itemErr != nil && !errors.Is(itemErr, sql.ErrNoRows) {
+			logger.Error("s.realEstateRepo.GetRealEstateLastHistory(): ", itemErr)
+			err = model.ErrRealEstateHistory
+			return err
 		}
 
 		//if estate.LatestHistory.Status.ID != model.Status_Available {
@@ -239,12 +243,13 @@ func (s *CollectionService) UpdateCollection(ctx context.Context, updCollection 
 				continue
 			}
 
-			tTitle, err := s.translateService.Translate(ctx, updCollection.Name, code)
+			var tTitle, tDesc string
+			tTitle, err = s.translateService.Translate(ctx, updCollection.Name, code)
 			if err != nil {
 				return err
 			}
 
-			tDesc, err := s.translateService.Translate(ctx, updCollection.Description, code)
+			tDesc, err = s.translateService.Translate(ctx, updCollection.Description, code)
 			if err != nil {
 				return err
 			}

@@ -273,15 +273,15 @@ func (m *mockLocationSvc) GetDistrictByID(ctx context.Context, id int64) (*model
 // ── IEmailService ─────────────────────────────────────────────────────────────
 
 type mockEmailSvc struct {
-	SendContactFormFn func(name, phone, message string) error
-	SendTourFormFn    func(name, phone string, desiredDate time.Time) error
+	SendContactFormFn func(ctx context.Context, name, phone, message string) error
+	SendTourFormFn    func(ctx context.Context, name, phone string, desiredDate time.Time) error
 }
 
-func (m *mockEmailSvc) SendContactForm(name, phone, message string) error {
-	return m.SendContactFormFn(name, phone, message)
+func (m *mockEmailSvc) SendContactForm(ctx context.Context, name, phone, message string) error {
+	return m.SendContactFormFn(ctx, name, phone, message)
 }
-func (m *mockEmailSvc) SendTourForm(name, phone string, desiredDate time.Time) error {
-	return m.SendTourFormFn(name, phone, desiredDate)
+func (m *mockEmailSvc) SendTourForm(ctx context.Context, name, phone string, desiredDate time.Time) error {
+	return m.SendTourFormFn(ctx, name, phone, desiredDate)
 }
 
 // ── IPageService ──────────────────────────────────────────────────────────────
