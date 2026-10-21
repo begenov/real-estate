@@ -97,6 +97,8 @@ func Run(cfg *config.Config) error {
 	locationRepo := postgres.NewLocationRepo(postgresDB)
 	pageRepo := postgres.NewPageRepo(postgresDB)
 	blockRepo := postgres.NewBlockRepo(postgresDB)
+	favoriteRepo := postgres.NewFavoriteRepo(postgresDB)
+	tourRepo := postgres.NewTourRepo(postgresDB)
 
 	//Service
 	translateService := service.NewTranslateService(translateClient)
@@ -131,9 +133,11 @@ func Run(cfg *config.Config) error {
 	emailService := service.NewEmailService(smtpSender, cfg.EmailConfig, cfg.SMTP.From, blockRepo)
 	pageService := service.NewPageService(pageRepo)
 	blockService := service.NewBlockService(blockRepo, translateService)
+	favoriteService := service.NewFavoriteService(favoriteRepo, realEstateRepo)
+	tourService := service.NewTourService(tourRepo, emailService)
 
 	// handler
-	handler := v1.NewHandler(realEstateService, userService, collectionService, minioService, token, amenityService, locationService, emailService, pageService, blockService, redisRepo)
+	handler := v1.NewHandler(realEstateService, userService, collectionService, minioService, token, amenityService, locationService, emailService, pageService, blockService, favoriteService, tourService, redisRepo)
 
 	srv := server.NewServer(cfg, handler.InitRouter(cfg))
 

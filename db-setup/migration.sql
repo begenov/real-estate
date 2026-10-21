@@ -314,4 +314,38 @@ INSERT INTO public.block_type (id, code, name) VALUES
     (5, 'html', 'HTML')
 ON CONFLICT (id) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS public.user_favorites (
+    user_id        BIGINT NOT NULL REFERENCES public."user"(id) ON DELETE CASCADE,
+    real_estate_id BIGINT NOT NULL REFERENCES public.real_estate(id) ON DELETE CASCADE,
+    created_at     TIMESTAMPTZ DEFAULT now(),
+    PRIMARY KEY (user_id, real_estate_id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_user_favorites_user_id ON public.user_favorites(user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.tour_request_status (
+    id   INT  PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+
+INSERT INTO public.tour_request_status (id, name) VALUES
+    (1, 'new'),
+    (2, 'in_progress'),
+    (3, 'completed'),
+    (4, 'cancelled')
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS public.tour_request (
+    id             BIGSERIAL PRIMARY KEY,
+    name           TEXT      NOT NULL,
+    phone          TEXT      NOT NULL,
+    desired_date   DATE      NOT NULL,
+    real_estate_id BIGINT    REFERENCES public.real_estate(id) ON DELETE SET NULL,
+    status_id      INT       NOT NULL DEFAULT 1 REFERENCES public.tour_request_status(id),
+    created_at     TIMESTAMPTZ DEFAULT now(),
+    updated_at     TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ix_tour_request_status ON public.tour_request(status_id, created_at DESC);
+
 COMMIT;

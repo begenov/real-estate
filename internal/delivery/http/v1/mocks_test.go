@@ -22,6 +22,8 @@ var _ service.ILocationService = (*mockLocationSvc)(nil)
 var _ service.IEmailService = (*mockEmailSvc)(nil)
 var _ service.IPageService = (*mockPageSvc)(nil)
 var _ service.IBlockService = (*mockBlockSvc)(nil)
+var _ service.IFavoriteService = (*mockFavoriteSvc)(nil)
+var _ service.ITourService = (*mockTourSvc)(nil)
 var _ redisRepo.IRedisRepo = (*mockRedis)(nil)
 
 // ── IUserService ──────────────────────────────────────────────────────────────
@@ -352,6 +354,46 @@ func (m *mockRedis) Get(ctx context.Context, key string) (string, error) {
 }
 func (m *mockRedis) Delete(ctx context.Context, key ...string) error {
 	return m.DeleteFn(ctx, key...)
+}
+
+// ── IFavoriteService ──────────────────────────────────────────────────────────
+
+type mockFavoriteSvc struct {
+	AddFn          func(ctx context.Context, userID, realEstateID int64) error
+	RemoveFn       func(ctx context.Context, userID, realEstateID int64) error
+	GetFavoritesFn func(ctx context.Context, userID int64, page, rows int) ([]model.Favorite, int, error)
+}
+
+func (m *mockFavoriteSvc) Add(ctx context.Context, userID, realEstateID int64) error {
+	return m.AddFn(ctx, userID, realEstateID)
+}
+func (m *mockFavoriteSvc) Remove(ctx context.Context, userID, realEstateID int64) error {
+	return m.RemoveFn(ctx, userID, realEstateID)
+}
+func (m *mockFavoriteSvc) GetFavorites(ctx context.Context, userID int64, page, rows int) ([]model.Favorite, int, error) {
+	return m.GetFavoritesFn(ctx, userID, page, rows)
+}
+
+// ── ITourService ──────────────────────────────────────────────────────────────
+
+type mockTourSvc struct {
+	SubmitFn       func(ctx context.Context, input *model.TourRequestInput) (*model.TourRequest, error)
+	GetRequestsFn  func(ctx context.Context, filter model.TourRequestFilter) ([]model.TourRequest, int, error)
+	GetByIDFn      func(ctx context.Context, id int64) (*model.TourRequest, error)
+	UpdateStatusFn func(ctx context.Context, id int64, statusID int) error
+}
+
+func (m *mockTourSvc) Submit(ctx context.Context, input *model.TourRequestInput) (*model.TourRequest, error) {
+	return m.SubmitFn(ctx, input)
+}
+func (m *mockTourSvc) GetRequests(ctx context.Context, filter model.TourRequestFilter) ([]model.TourRequest, int, error) {
+	return m.GetRequestsFn(ctx, filter)
+}
+func (m *mockTourSvc) GetByID(ctx context.Context, id int64) (*model.TourRequest, error) {
+	return m.GetByIDFn(ctx, id)
+}
+func (m *mockTourSvc) UpdateStatus(ctx context.Context, id int64, statusID int) error {
+	return m.UpdateStatusFn(ctx, id, statusID)
 }
 
 // ── test helpers ──────────────────────────────────────────────────────────────

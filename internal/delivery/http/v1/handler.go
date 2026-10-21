@@ -24,6 +24,8 @@ type Handler struct {
 	emailService      service.IEmailService
 	pageService       service.IPageService
 	blockService      service.IBlockService
+	favoriteService   service.IFavoriteService
+	tourService       service.ITourService
 	cache             redis.IRedisRepo
 	cacheSF           async.Singleflight
 }
@@ -33,7 +35,8 @@ func NewHandler(realEstateService service.IRealEstateService,
 	minioService service.IMinioService, tokenManager auth.TokenManager,
 	amenityService service.IAmenityService, locationService service.ILocationService,
 	emailService service.IEmailService, pageService service.IPageService,
-	blockService service.IBlockService, cache redis.IRedisRepo) *Handler {
+	blockService service.IBlockService, favoriteService service.IFavoriteService,
+	tourService service.ITourService, cache redis.IRedisRepo) *Handler {
 	return &Handler{
 		realEstateService: realEstateService,
 		userService:       userService,
@@ -45,6 +48,8 @@ func NewHandler(realEstateService service.IRealEstateService,
 		emailService:      emailService,
 		pageService:       pageService,
 		blockService:      blockService,
+		favoriteService:   favoriteService,
+		tourService:       tourService,
 		cache:             cache,
 	}
 }
@@ -83,5 +88,7 @@ func (h *Handler) Init(api *gin.RouterGroup) {
 		h.initEmailRoutes(v1)
 		h.initPageRoutes(v1)
 		h.initBlockRoutes(v1)
+		h.initFavoriteRoutes(v1)
+		h.initTourRoutes(v1)
 	}
 }

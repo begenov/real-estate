@@ -24,7 +24,7 @@ func buildRouter(
 ) *gin.Engine {
 	h := NewHandler(
 		reSvc, userSvc, nil, nil, tokenMgr,
-		amenitySvc, nil, nil, nil, nil, nil,
+		amenitySvc, nil, nil, nil, nil, nil, nil, nil,
 	)
 	r := gin.New()
 	r.Use(gin.Recovery(), errorHandlerMiddleware)
