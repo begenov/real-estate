@@ -348,4 +348,13 @@ CREATE TABLE IF NOT EXISTS public.tour_request (
 
 CREATE INDEX IF NOT EXISTS ix_tour_request_status ON public.tour_request(status_id, created_at DESC);
 
+CREATE TABLE IF NOT EXISTS public.real_estate_price_history (
+    id             BIGSERIAL PRIMARY KEY,
+    real_estate_id BIGINT    NOT NULL REFERENCES public.real_estate(id) ON DELETE CASCADE,
+    price          NUMERIC(15,2) NOT NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ix_price_history_re ON public.real_estate_price_history(real_estate_id, created_at DESC);
+
 COMMIT;

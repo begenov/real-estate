@@ -22,6 +22,8 @@ type IRealEstateService interface {
 	DeleteRealEstate(ctx context.Context, id, userId int64) error
 	UpdateStatus(ctx context.Context, estateId, userId int64, statusId int) error
 	ReorderPhotos(ctx context.Context, realEstateID int64, photos []model.PhotoOrderItem) error
+	CompareRealEstates(ctx context.Context, ids []int64) ([]*model.RealEstate, error)
+	GetPriceHistory(ctx context.Context, realEstateID int64) ([]model.PriceHistoryEntry, error)
 }
 
 type RealEstateService struct {
@@ -33,13 +35,15 @@ type RealEstateService struct {
 	locationService      ILocationService
 	exchangeRateService  IExchangeRateService
 	translator           ITranslateService
+	priceHistoryRepo     postgres.IPriceHistoryRepo
 	translateConcurrency int
 }
 
 func NewRealEstateService(realEstateRepo postgres.IRealEstateRepo, userRepo postgres.IUserRepo,
 	txRepo postgres.ITxRepo, fileService IMinioService, amenityService IAmenityService,
 	locationService ILocationService, exchangeRateService IExchangeRateService,
-	translateService ITranslateService, translateConcurrency int) IRealEstateService {
+	translateService ITranslateService, priceHistoryRepo postgres.IPriceHistoryRepo,
+	translateConcurrency int) IRealEstateService {
 	if translateConcurrency <= 0 {
 		translateConcurrency = 3
 	}
@@ -52,6 +56,7 @@ func NewRealEstateService(realEstateRepo postgres.IRealEstateRepo, userRepo post
 		locationService:      locationService,
 		exchangeRateService:  exchangeRateService,
 		translator:           translateService,
+		priceHistoryRepo:     priceHistoryRepo,
 		translateConcurrency: translateConcurrency,
 	}
 }
@@ -270,6 +275,12 @@ func (s *RealEstateService) CreateRealEstate(ctx context.Context, estate *model.
 
 	estate.ID = id
 
+	err = s.priceHistoryRepo.Add(ctx, tx, id, estate.Price)
+	if err != nil {
+		logger.Error("s.priceHistoryRepo.Add(): ", err)
+		return err
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return err
@@ -444,6 +455,18 @@ func (s *RealEstateService) UpdateRealEstate(ctx context.Context, updEstate *mod
 					return err
 				}
 			}
+		}
+	}
+
+	latestPrice, exists, err := s.priceHistoryRepo.GetLatestPrice(ctx, updEstate.ID)
+	if err != nil {
+		logger.Error("s.priceHistoryRepo.GetLatestPrice(): ", err)
+		return err
+	}
+	if !exists || latestPrice != updEstate.Price {
+		if err = s.priceHistoryRepo.Add(ctx, tx, updEstate.ID, updEstate.Price); err != nil {
+			logger.Error("s.priceHistoryRepo.Add(): ", err)
+			return err
 		}
 	}
 
@@ -694,4 +717,42 @@ func (s *RealEstateService) ReorderPhotos(ctx context.Context, realEstateID int6
 		return model.ErrNotFound
 	}
 	return s.realEstateRepo.UpdatePhotoOrder(ctx, realEstateID, photos)
+}
+
+func (s *RealEstateService) CompareRealEstates(ctx context.Context, ids []int64) ([]*model.RealEstate, error) {
+	if len(ids) < model.CompareMinItems || len(ids) > model.CompareMaxItems {
+		return nil, model.ErrBadRequestQuery
+	}
+
+	seen := make(map[int64]struct{}, len(ids))
+	for _, id := range ids {
+		if _, dup := seen[id]; dup {
+			return nil, model.ErrBadRequestQuery
+		}
+		seen[id] = struct{}{}
+	}
+
+	results := make([]*model.RealEstate, 0, len(ids))
+	for _, id := range ids {
+		estate, err := s.GetRealEstate(ctx, id, nil)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, estate)
+	}
+	return results, nil
+}
+
+func (s *RealEstateService) GetPriceHistory(ctx context.Context, realEstateID int64) ([]model.PriceHistoryEntry, error) {
+	if realEstateID <= 0 {
+		return nil, model.ErrIdMustBeGreaterThanZero
+	}
+	estate, err := s.realEstateRepo.GetRealEstate(ctx, realEstateID)
+	if err != nil {
+		return nil, err
+	}
+	if estate == nil {
+		return nil, model.ErrNotFound
+	}
+	return s.priceHistoryRepo.GetByRealEstateID(ctx, realEstateID)
 }

@@ -297,6 +297,35 @@ func (m *mockTranslate) Translate(ctx context.Context, text, lang string) (strin
 
 var _ ITranslateService = (*mockTranslate)(nil)
 
+// ── price history repo ────────────────────────────────────────────────────────
+
+type mockPriceHistoryRepo struct {
+	AddFn             func(ctx context.Context, tx *sql.Tx, realEstateID int64, price float64) error
+	GetByRealEstateFn func(ctx context.Context, realEstateID int64) ([]model.PriceHistoryEntry, error)
+	GetLatestPriceFn  func(ctx context.Context, realEstateID int64) (float64, bool, error)
+}
+
+func (m *mockPriceHistoryRepo) Add(ctx context.Context, tx *sql.Tx, realEstateID int64, price float64) error {
+	if m.AddFn != nil {
+		return m.AddFn(ctx, tx, realEstateID, price)
+	}
+	return nil
+}
+func (m *mockPriceHistoryRepo) GetByRealEstateID(ctx context.Context, realEstateID int64) ([]model.PriceHistoryEntry, error) {
+	if m.GetByRealEstateFn != nil {
+		return m.GetByRealEstateFn(ctx, realEstateID)
+	}
+	return nil, nil
+}
+func (m *mockPriceHistoryRepo) GetLatestPrice(ctx context.Context, realEstateID int64) (float64, bool, error) {
+	if m.GetLatestPriceFn != nil {
+		return m.GetLatestPriceFn(ctx, realEstateID)
+	}
+	return 0, false, nil
+}
+
+var _ postgres.IPriceHistoryRepo = (*mockPriceHistoryRepo)(nil)
+
 // ── minio service ─────────────────────────────────────────────────────────────
 
 type mockMinioService struct {

@@ -126,6 +126,7 @@ func Run(cfg *config.Config) error {
 		locationService,
 		exchangeRateService,
 		translateService,
+		priceHistoryRepo,
 		cfg.Async.TranslateConcurrency,
 	)
 	userService := service.NewUserService(hashPassword, token, userRepo, redisRepo, txRepo)

@@ -18,7 +18,9 @@ func (h *Handler) initRealStateRoutes(api *gin.RouterGroup) {
 		public.Use(h.cachePublicGet())
 		{
 			public.GET("", h.getRealEstates)
+			public.GET("/compare", h.compareRealEstates)
 			public.GET("/:id", h.getRealEstateByID)
+			public.GET("/:id/price-history", h.getPriceHistory)
 			public.GET("/total", h.getRealEstateTotal)
 		}
 
@@ -428,4 +430,47 @@ func (h *Handler) reorderPhotos(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+}
+
+func (h *Handler) compareRealEstates(c *gin.Context) {
+	idStrs := c.QueryArray("id")
+	if len(idStrs) < model.CompareMinItems || len(idStrs) > model.CompareMaxItems {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "provide between 2 and 4 ids"})
+		return
+	}
+
+	ids := make([]int64, 0, len(idStrs))
+	for _, s := range idStrs {
+		id, err := strconv.ParseInt(s, 10, 64)
+		if err != nil || id <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id: " + s})
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	items, err := h.realEstateService.CompareRealEstates(c.Request.Context(), ids)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, model.CompareResponse{Items: items})
+}
+
+func (h *Handler) getPriceHistory(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid real estate id"})
+		return
+	}
+
+	history, err := h.realEstateService.GetPriceHistory(c.Request.Context(), id)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, model.PriceHistoryResponse{History: history})
 }

@@ -40,7 +40,7 @@ func defaultAmenity() *mockAmenityService {
 func TestGetRealEstate_InvalidID(t *testing.T) {
 	svc := NewRealEstateService(
 		&mockRealEstateRepo{}, &mockUserRepo{}, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	for _, id := range []int64{0, -1, -100} {
@@ -60,7 +60,7 @@ func TestGetRealEstate_NotFound(t *testing.T) {
 
 	svc := NewRealEstateService(
 		reRepo, &mockUserRepo{}, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	_, err := svc.GetRealEstate(context.Background(), 1, nil)
@@ -97,7 +97,7 @@ func TestGetRealEstate_Success(t *testing.T) {
 
 	svc := NewRealEstateService(
 		reRepo, &mockUserRepo{}, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	result, err := svc.GetRealEstate(context.Background(), 42, nil)
@@ -120,7 +120,7 @@ func TestGetRealEstate_Success(t *testing.T) {
 func TestCreateRealEstate_NilInput(t *testing.T) {
 	svc := NewRealEstateService(
 		&mockRealEstateRepo{}, &mockUserRepo{}, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	err := svc.CreateRealEstate(context.Background(), nil)
@@ -138,7 +138,7 @@ func TestCreateRealEstate_AccessDenied(t *testing.T) {
 
 	svc := NewRealEstateService(
 		&mockRealEstateRepo{}, userRepo, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	err := svc.CreateRealEstate(context.Background(), validRealEstateInput())
@@ -152,7 +152,7 @@ func TestCreateRealEstate_AccessDenied(t *testing.T) {
 func TestDeleteRealEstate_InvalidID(t *testing.T) {
 	svc := NewRealEstateService(
 		&mockRealEstateRepo{}, &mockUserRepo{}, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	err := svc.DeleteRealEstate(context.Background(), 0, 1)
@@ -175,7 +175,7 @@ func TestDeleteRealEstate_AccessDenied(t *testing.T) {
 
 	svc := NewRealEstateService(
 		reRepo, userRepo, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	err := svc.DeleteRealEstate(context.Background(), 1, 99)
@@ -189,7 +189,7 @@ func TestDeleteRealEstate_AccessDenied(t *testing.T) {
 func TestUpdateStatus_InvalidStatus(t *testing.T) {
 	svc := NewRealEstateService(
 		&mockRealEstateRepo{}, &mockUserRepo{}, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	err := svc.UpdateStatus(context.Background(), 1, 1, 999)
@@ -215,7 +215,7 @@ func TestUpdateStatus_SameStatus_NoOp(t *testing.T) {
 
 	svc := NewRealEstateService(
 		reRepo, userRepo, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	err := svc.UpdateStatus(context.Background(), 1, 1, model.Status_Available)
@@ -239,7 +239,7 @@ func TestUpdateStatus_ManagerCannotSetAvailable(t *testing.T) {
 
 	svc := NewRealEstateService(
 		reRepo, userRepo, &mockTxRepo{}, &mockMinioService{},
-		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, 1,
+		defaultAmenity(), defaultLocation(), defaultRates(), &mockTranslate{}, &mockPriceHistoryRepo{}, 1,
 	)
 
 	err := svc.UpdateStatus(context.Background(), 1, managerID, model.Status_Available)

@@ -76,3 +76,12 @@ type PhotoOrderItem struct {
 type PhotoOrderInput struct {
 	Photos []PhotoOrderItem `json:"photos" binding:"required,min=1"`
 }
+
+const (
+	CompareMinItems = 2
+	CompareMaxItems = 4
+)
+
+type CompareResponse struct {
+	Items []*RealEstate `json:"items"`
+}

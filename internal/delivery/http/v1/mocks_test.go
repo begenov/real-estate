@@ -79,6 +79,8 @@ type mockRealEstateSvc struct {
 	DeleteRealEstateFn   func(ctx context.Context, id, userId int64) error
 	UpdateStatusFn       func(ctx context.Context, estateId, userId int64, statusId int) error
 	ReorderPhotosFn      func(ctx context.Context, realEstateID int64, photos []model.PhotoOrderItem) error
+	CompareRealEstatesFn func(ctx context.Context, ids []int64) ([]*model.RealEstate, error)
+	GetPriceHistoryFn    func(ctx context.Context, realEstateID int64) ([]model.PriceHistoryEntry, error)
 }
 
 func (m *mockRealEstateSvc) CreateRealEstate(ctx context.Context, estate *model.RealEstateInput) error {
@@ -104,6 +106,12 @@ func (m *mockRealEstateSvc) UpdateStatus(ctx context.Context, estateId, userId i
 }
 func (m *mockRealEstateSvc) ReorderPhotos(ctx context.Context, realEstateID int64, photos []model.PhotoOrderItem) error {
 	return m.ReorderPhotosFn(ctx, realEstateID, photos)
+}
+func (m *mockRealEstateSvc) CompareRealEstates(ctx context.Context, ids []int64) ([]*model.RealEstate, error) {
+	return m.CompareRealEstatesFn(ctx, ids)
+}
+func (m *mockRealEstateSvc) GetPriceHistory(ctx context.Context, realEstateID int64) ([]model.PriceHistoryEntry, error) {
+	return m.GetPriceHistoryFn(ctx, realEstateID)
 }
 
 // ── ICollectionService ────────────────────────────────────────────────────────
