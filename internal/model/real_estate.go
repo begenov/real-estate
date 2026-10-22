@@ -67,3 +67,12 @@ type RealEstatePhoto struct {
 	ID  int64  `json:"id"`
 	URL string `json:"url"`
 }
+
+type PhotoOrderItem struct {
+	PhotoID  int64 `json:"photo_id" binding:"required"`
+	OrderNum int   `json:"order_num" binding:"required,min=1"`
+}
+
+type PhotoOrderInput struct {
+	Photos []PhotoOrderItem `json:"photos" binding:"required,min=1"`
+}

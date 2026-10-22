@@ -42,6 +42,8 @@ type IRealEstateRepo interface {
 	AddAmenity(ctx context.Context, tx *sql.Tx, realEstateID, amenityID int64) error
 	RemoveAmenity(ctx context.Context, tx *sql.Tx, realEstateID, amenityID int64) error
 	GetAmenitiesByRealEstateID(ctx context.Context, realEstateID int64) ([]int64, error)
+
+	UpdatePhotoOrder(ctx context.Context, realEstateID int64, photos []model.PhotoOrderItem) error
 }
 type RealEstateRepo struct {
 	db *sql.DB
@@ -153,6 +155,53 @@ func appendRealEstateFilters(sb *strings.Builder, params []interface{}, filter m
 		sb.WriteString(fmt.Sprintf(" AND re.id = $%d", len(params)+1))
 		params = append(params, *filter.ID)
 	}
+	if filter.AreaMin != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.area >= $%d", len(params)+1))
+		params = append(params, *filter.AreaMin)
+	}
+	if filter.AreaMax != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.area <= $%d", len(params)+1))
+		params = append(params, *filter.AreaMax)
+	}
+	if filter.HasBalcony != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.has_balcony = $%d", len(params)+1))
+		params = append(params, *filter.HasBalcony)
+	}
+	if filter.ParkingAvailable != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.parking_available = $%d", len(params)+1))
+		params = append(params, *filter.ParkingAvailable)
+	}
+	if filter.BuiltYearMin != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.built_year >= $%d", len(params)+1))
+		params = append(params, *filter.BuiltYearMin)
+	}
+	if filter.BuiltYearMax != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.built_year <= $%d", len(params)+1))
+		params = append(params, *filter.BuiltYearMax)
+	}
+	if filter.DistanceToSeaMax != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.distance_to_sea <= $%d", len(params)+1))
+		params = append(params, *filter.DistanceToSeaMax)
+	}
+	if len(filter.AmenityIDs) > 0 {
+		sb.WriteString(fmt.Sprintf(`
+			AND re.id IN (
+				SELECT rea.real_estate_id
+				FROM public.real_estate_amenities rea
+				WHERE rea.amenity_id = ANY($%d)
+				GROUP BY rea.real_estate_id
+				HAVING COUNT(DISTINCT rea.amenity_id) = %d
+			)`, len(params)+1, len(filter.AmenityIDs)))
+		params = append(params, pq.Array(filter.AmenityIDs))
+	}
+	if filter.CompletionFrom != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.completion_date >= $%d", len(params)+1))
+		params = append(params, *filter.CompletionFrom)
+	}
+	if filter.CompletionTo != nil {
+		sb.WriteString(fmt.Sprintf(" AND re.completion_date <= $%d", len(params)+1))
+		params = append(params, *filter.CompletionTo)
+	}
 	return params
 }
 
@@ -205,15 +254,20 @@ func (r *RealEstateRepo) GetRealEstates(ctx context.Context, filter model.RealEs
 
 	if len(filter.SortBy) > 0 {
 		var sortClauses []string
-		validSortColumns := map[string]bool{"price": true, "area": true, "rooms": true}
+		validSortColumns := map[string]string{
+			"price":           "re.price",
+			"area":            "re.area",
+			"rooms":           "re.rooms",
+			"completion_date": "re.completion_date",
+		}
 
 		for i, sortField := range filter.SortBy {
-			if validSortColumns[sortField] {
+			if col, ok := validSortColumns[sortField]; ok {
 				order := "ASC"
 				if i < len(filter.SortOrder) && filter.SortOrder[i] == "desc" {
 					order = "DESC"
 				}
-				sortClauses = append(sortClauses, fmt.Sprintf("%s %s", sortField, order))
+				sortClauses = append(sortClauses, fmt.Sprintf("%s %s", col, order))
 			}
 		}
 
@@ -805,4 +859,16 @@ func (r *RealEstateRepo) GetAmenitiesByRealEstateID(ctx context.Context, realEst
 	}
 
 	return amenities, rows.Err()
+}
+
+func (r *RealEstateRepo) UpdatePhotoOrder(ctx context.Context, realEstateID int64, photos []model.PhotoOrderItem) error {
+	for _, p := range photos {
+		_, err := r.db.ExecContext(ctx,
+			`UPDATE public.real_estate_url SET order_num = $1 WHERE real_estate_id = $2 AND files_id = $3`,
+			p.OrderNum, realEstateID, p.PhotoID)
+		if err != nil {
+			return fmt.Errorf("update photo order (photo_id=%d): %w", p.PhotoID, err)
+		}
+	}
+	return nil
 }

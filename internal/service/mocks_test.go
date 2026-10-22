@@ -142,6 +142,7 @@ type mockRealEstateRepo struct {
 	AddAmenityFn                     func(ctx context.Context, tx *sql.Tx, realEstateID, amenityID int64) error
 	RemoveAmenityFn                  func(ctx context.Context, tx *sql.Tx, realEstateID, amenityID int64) error
 	GetAmenitiesByRealEstateIDFn     func(ctx context.Context, realEstateID int64) ([]int64, error)
+	UpdatePhotoOrderFn               func(ctx context.Context, realEstateID int64, photos []model.PhotoOrderItem) error
 }
 
 func (m *mockRealEstateRepo) GetRealEstate(ctx context.Context, id int64) (*model.RealEstate, error) {
@@ -206,6 +207,9 @@ func (m *mockRealEstateRepo) RemoveAmenity(ctx context.Context, tx *sql.Tx, real
 }
 func (m *mockRealEstateRepo) GetAmenitiesByRealEstateID(ctx context.Context, id int64) ([]int64, error) {
 	return m.GetAmenitiesByRealEstateIDFn(ctx, id)
+}
+func (m *mockRealEstateRepo) UpdatePhotoOrder(ctx context.Context, realEstateID int64, photos []model.PhotoOrderItem) error {
+	return m.UpdatePhotoOrderFn(ctx, realEstateID, photos)
 }
 
 var _ postgres.IRealEstateRepo = (*mockRealEstateRepo)(nil)

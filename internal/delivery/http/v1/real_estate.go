@@ -1,12 +1,13 @@
 package v1
 
 import (
-	"github.com/begenov/real-estate/internal/logger"
-	"github.com/begenov/real-estate/internal/model"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/begenov/real-estate/internal/logger"
+	"github.com/begenov/real-estate/internal/model"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,6 +32,7 @@ func (h *Handler) initRealStateRoutes(api *gin.RouterGroup) {
 			realEstateAuth.PUT("", h.updateRealEstate)
 			realEstateAuth.DELETE("/:id", h.deleteRealEstate)
 			realEstateAuth.POST("/:id/status", h.updateRealEstateStatus)
+			realEstateAuth.PATCH("/:id/photos/order", h.reorderPhotos)
 		}
 	}
 }
@@ -255,7 +257,7 @@ func parseRealEstateFilters(c *gin.Context) (model.RealEstateFilter, error) {
 	sortBy := c.QueryArray("sort_by")
 
 	for _, s := range sortBy {
-		if s == "price" || s == "area" {
+		if s == "price" || s == "area" || s == "completion_date" {
 			filter.SortBy = append(filter.SortBy, s)
 		}
 	}
@@ -301,6 +303,79 @@ func parseRealEstateFilters(c *gin.Context) (model.RealEstateFilter, error) {
 		filter.StatusID = &parseInt
 	}
 
+	if areaMinStr := c.Query("area_min"); areaMinStr != "" {
+		v, err := strconv.ParseFloat(areaMinStr, 64)
+		if err != nil {
+			return filter, model.ErrBadRequestQuery
+		}
+		filter.AreaMin = &v
+	}
+	if areaMaxStr := c.Query("area_max"); areaMaxStr != "" {
+		v, err := strconv.ParseFloat(areaMaxStr, 64)
+		if err != nil {
+			return filter, model.ErrBadRequestQuery
+		}
+		filter.AreaMax = &v
+	}
+	if hasBalconyStr := c.Query("has_balcony"); hasBalconyStr != "" {
+		v, err := strconv.ParseBool(hasBalconyStr)
+		if err != nil {
+			return filter, model.ErrBadRequestQuery
+		}
+		filter.HasBalcony = &v
+	}
+	if parkingStr := c.Query("parking"); parkingStr != "" {
+		v, err := strconv.ParseBool(parkingStr)
+		if err != nil {
+			return filter, model.ErrBadRequestQuery
+		}
+		filter.ParkingAvailable = &v
+	}
+	if builtYearMinStr := c.Query("built_year_min"); builtYearMinStr != "" {
+		v, err := strconv.Atoi(builtYearMinStr)
+		if err != nil {
+			return filter, model.ErrBadRequestQuery
+		}
+		filter.BuiltYearMin = &v
+	}
+	if builtYearMaxStr := c.Query("built_year_max"); builtYearMaxStr != "" {
+		v, err := strconv.Atoi(builtYearMaxStr)
+		if err != nil {
+			return filter, model.ErrBadRequestQuery
+		}
+		filter.BuiltYearMax = &v
+	}
+	if distanceStr := c.Query("distance_to_sea_max"); distanceStr != "" {
+		v, err := strconv.ParseFloat(distanceStr, 64)
+		if err != nil {
+			return filter, model.ErrBadRequestQuery
+		}
+		filter.DistanceToSeaMax = &v
+	}
+	if amenityStrs := c.QueryArray("amenity_id"); len(amenityStrs) > 0 {
+		for _, s := range amenityStrs {
+			id, err := strconv.ParseInt(s, 10, 64)
+			if err != nil {
+				return filter, model.ErrBadRequestQuery
+			}
+			filter.AmenityIDs = append(filter.AmenityIDs, id)
+		}
+	}
+	if completionFromStr := c.Query("completion_from"); completionFromStr != "" {
+		t, err := time.Parse("2006-01-02", completionFromStr)
+		if err != nil {
+			return filter, model.ErrBadRequestQuery
+		}
+		filter.CompletionFrom = &t
+	}
+	if completionToStr := c.Query("completion_to"); completionToStr != "" {
+		t, err := time.Parse("2006-01-02", completionToStr)
+		if err != nil {
+			return filter, model.ErrBadRequestQuery
+		}
+		filter.CompletionTo = &t
+	}
+
 	return filter, nil
 }
 
@@ -326,6 +401,28 @@ func (h *Handler) updateRealEstateStatus(c *gin.Context) {
 
 	err = h.realEstateService.UpdateStatus(c.Request.Context(), id, currentUserId, req.StatusID)
 	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func (h *Handler) reorderPhotos(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid real estate id"})
+		return
+	}
+
+	var input model.PhotoOrderInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	if err := h.realEstateService.ReorderPhotos(c.Request.Context(), id, input.Photos); err != nil {
 		_ = c.Error(err)
 		return
 	}

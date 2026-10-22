@@ -21,6 +21,7 @@ type IRealEstateService interface {
 	UpdateRealEstate(ctx context.Context, estate *model.RealEstateInput) error
 	DeleteRealEstate(ctx context.Context, id, userId int64) error
 	UpdateStatus(ctx context.Context, estateId, userId int64, statusId int) error
+	ReorderPhotos(ctx context.Context, realEstateID int64, photos []model.PhotoOrderItem) error
 }
 
 type RealEstateService struct {
@@ -682,4 +683,15 @@ func (s *RealEstateService) autoTranslate(ctx context.Context, title, descriptio
 	})
 
 	return translations, nil
+}
+
+func (s *RealEstateService) ReorderPhotos(ctx context.Context, realEstateID int64, photos []model.PhotoOrderItem) error {
+	estate, err := s.realEstateRepo.GetRealEstate(ctx, realEstateID)
+	if err != nil {
+		return err
+	}
+	if estate == nil {
+		return model.ErrNotFound
+	}
+	return s.realEstateRepo.UpdatePhotoOrder(ctx, realEstateID, photos)
 }

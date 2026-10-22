@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type UsersFilter struct {
 	Page int
 	Rows int
@@ -27,13 +29,24 @@ type RealEstateFilter struct {
 	Rows       int
 	DistrictID *int
 
-	//
 	Status   []int
 	IsActive bool
 
 	CollectionId *int64
 	ID           *int64
 	StatusID     *int64
+
+	// extended filters
+	AreaMin          *float64
+	AreaMax          *float64
+	HasBalcony       *bool
+	ParkingAvailable *bool
+	BuiltYearMin     *int
+	BuiltYearMax     *int
+	DistanceToSeaMax *float64
+	AmenityIDs       []int64
+	CompletionFrom   *time.Time
+	CompletionTo     *time.Time
 }
 
 type CollectionFilter struct {
