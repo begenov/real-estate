@@ -99,6 +99,7 @@ func Run(cfg *config.Config) error {
 	blockRepo := postgres.NewBlockRepo(postgresDB)
 	favoriteRepo := postgres.NewFavoriteRepo(postgresDB)
 	tourRepo := postgres.NewTourRepo(postgresDB)
+	priceHistoryRepo := postgres.NewPriceHistoryRepo(postgresDB)
 
 	//Service
 	translateService := service.NewTranslateService(translateClient)
