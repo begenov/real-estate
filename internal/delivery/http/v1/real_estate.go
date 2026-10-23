@@ -378,6 +378,10 @@ func parseRealEstateFilters(c *gin.Context) (model.RealEstateFilter, error) {
 		filter.CompletionTo = &t
 	}
 
+	if search := strings.TrimSpace(c.Query("search")); search != "" {
+		filter.Search = &search
+	}
+
 	return filter, nil
 }
 

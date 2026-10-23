@@ -202,6 +202,20 @@ func appendRealEstateFilters(sb *strings.Builder, params []interface{}, filter m
 		sb.WriteString(fmt.Sprintf(" AND re.completion_date <= $%d", len(params)+1))
 		params = append(params, *filter.CompletionTo)
 	}
+	if filter.Search != nil {
+		term := "%" + *filter.Search + "%"
+		sb.WriteString(fmt.Sprintf(`
+			AND (
+				re.address ILIKE $%d
+				OR re.location ILIKE $%d
+				OR EXISTS (
+					SELECT 1 FROM public.real_estate_translations ret
+					WHERE ret.real_estate_id = re.id
+					  AND (ret.name ILIKE $%d OR ret.description ILIKE $%d)
+				)
+			)`, len(params)+1, len(params)+1, len(params)+1, len(params)+1))
+		params = append(params, term)
+	}
 	return params
 }
 

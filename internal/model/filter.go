@@ -28,6 +28,7 @@ type RealEstateFilter struct {
 	Page       int
 	Rows       int
 	DistrictID *int
+	Search     *string
 
 	Status   []int
 	IsActive bool
