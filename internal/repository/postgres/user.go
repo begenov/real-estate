@@ -242,6 +242,10 @@ func (r *UserRepo) GetUsers(ctx context.Context, filter *model.UsersFilter) ([]*
 		users = append(users, &u)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterating users: %w", err)
+	}
+
 	return users, total, nil
 }
 

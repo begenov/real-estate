@@ -45,7 +45,7 @@ func (h *Handler) getPublicCollection(c *gin.Context) {
 	}
 
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if err != nil || page < 0 {
+	if err != nil || page < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page value"})
 		return
 	}
@@ -81,7 +81,7 @@ func (h *Handler) getPublicCollection(c *gin.Context) {
 func (h *Handler) getCollections(c *gin.Context) {
 
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if err != nil || page < 0 {
+	if err != nil || page < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page value"})
 		return
 	}
@@ -144,7 +144,7 @@ func (h *Handler) getCollectionByID(c *gin.Context) {
 	}
 
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if err != nil || page < 0 {
+	if err != nil || page < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page value"})
 		return
 	}

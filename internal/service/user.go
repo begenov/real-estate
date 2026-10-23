@@ -451,7 +451,7 @@ func (s *UserService) createSession(ctx context.Context, userId int64) (*model.T
 		return nil, err
 	}
 
-	err = s.redis.Save(ctx, tokens.SessionUuid, userId, time.Duration(tokens.RtExpires)*time.Second)
+	err = s.redis.Save(ctx, tokens.SessionUuid, userId, time.Until(time.Unix(tokens.RtExpires, 0)))
 	if err != nil {
 		logger.Error("Save(): ", err)
 		return nil, err
@@ -470,12 +470,12 @@ func (s *UserService) createSession(ctx context.Context, userId int64) (*model.T
 }
 
 func (s *UserService) saveTokens(ctx context.Context, tokenDetail *model.TokenDetails) error {
-	err := s.redis.Save(ctx, tokenDetail.AccessUuid, []string{tokenDetail.SessionUuid, tokenDetail.RefreshUuid}, time.Duration(tokenDetail.AtExpires)*time.Second)
+	err := s.redis.Save(ctx, tokenDetail.AccessUuid, []string{tokenDetail.SessionUuid, tokenDetail.RefreshUuid}, time.Until(time.Unix(tokenDetail.AtExpires, 0)))
 	if err != nil {
 		return err
 	}
 
-	err = s.redis.Save(ctx, tokenDetail.RefreshUuid, tokenDetail.SessionUuid, time.Duration(tokenDetail.RtExpires)*time.Second)
+	err = s.redis.Save(ctx, tokenDetail.RefreshUuid, tokenDetail.SessionUuid, time.Until(time.Unix(tokenDetail.RtExpires, 0)))
 	if err != nil {
 		return err
 	}

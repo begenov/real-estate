@@ -189,7 +189,7 @@ func (s *CollectionService) UpdateCollection(ctx context.Context, updCollection 
 		}
 	}()
 
-	err = s.collectionRepo.UpdateCollection(ctx, updCollection)
+	err = s.collectionRepo.UpdateCollection(ctx, tx, updCollection)
 	if err != nil {
 		logger.Errorf("s.collectionRepo.UpdateCollection() error: %v", err)
 		return err

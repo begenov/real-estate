@@ -330,7 +330,7 @@ func (s *RealEstateService) UpdateRealEstate(ctx context.Context, updEstate *mod
 		return err
 	}
 
-	if history != nil && history.Status.ID < 0 {
+	if history != nil && history.Status.ID != model.Status_Created {
 		return model.ErrRealEstateStatusNotCreated
 	}
 

@@ -17,7 +17,7 @@ type ICollectionRepo interface {
 	SetStatus(ctx context.Context, tx *sql.Tx, collectionID, userId int64, statusID int) error
 	UpsertCollectionItem(ctx context.Context, tx *sql.Tx, collectionID, realEstateID int64) error
 	GetCollection(ctx context.Context, filter *model.CollectionFilter) (*model.Collection, error)
-	UpdateCollection(ctx context.Context, collection *model.CollectionInput) error
+	UpdateCollection(ctx context.Context, tx *sql.Tx, collection *model.CollectionInput) error
 	DeleteCollectionItem(ctx context.Context, tx *sql.Tx, collectionID, realEstateID int64) error
 	GetCollections(ctx context.Context, filter *model.CollectionFilter) (model.Collections, int, error)
 	DeleteCollectionItems(ctx context.Context, tx *sql.Tx, collectionID int64) error
@@ -51,12 +51,12 @@ func (r *CollectionRepo) CreateCollection(ctx context.Context, tx *sql.Tx, colle
 	return id, nil
 }
 
-func (r *CollectionRepo) UpdateCollection(ctx context.Context, collection *model.CollectionInput) error {
-	query := `UPDATE public.collection 
+func (r *CollectionRepo) UpdateCollection(ctx context.Context, tx *sql.Tx, collection *model.CollectionInput) error {
+	query := `UPDATE public.collection
               SET name = $1, description = $2, photo_url = $3, is_temporary = $4
               WHERE id = $5`
 
-	result, err := r.db.ExecContext(ctx, query, collection.Name, collection.Description, collection.URL, collection.IsTemporary, collection.ID)
+	result, err := tx.ExecContext(ctx, query, collection.Name, collection.Description, collection.URL, collection.IsTemporary, collection.ID)
 	if err != nil {
 		return err
 	}

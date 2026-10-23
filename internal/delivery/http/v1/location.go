@@ -278,7 +278,7 @@ func (h *Handler) updateDistrict(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, input)
+	c.JSON(http.StatusOK, input)
 }
 
 func (h *Handler) deleteDistrict(c *gin.Context) {

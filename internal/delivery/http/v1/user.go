@@ -102,7 +102,8 @@ func (h *Handler) userCreate(c *gin.Context) {
 
 		photoURL, err := h.minioService.UploadUserPhoto(c.Request.Context(), &userPhotoInp)
 		if err != nil {
-			logger.Error(photoURL, err)
+			logger.Error(err)
+			_ = c.Error(err)
 			return
 		}
 
@@ -121,7 +122,7 @@ func (h *Handler) userCreate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusCreated, user)
 }
 
 func (h *Handler) userSignOut(c *gin.Context) {
@@ -256,7 +257,8 @@ func (h *Handler) updateManager(c *gin.Context) {
 
 		photoURL, err := h.minioService.UploadUserPhoto(c.Request.Context(), &userPhotoInp)
 		if err != nil {
-			logger.Error(photoURL, err)
+			logger.Error(err)
+			_ = c.Error(err)
 			return
 		}
 
